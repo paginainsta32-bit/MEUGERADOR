@@ -1,10 +1,9 @@
-﻿import os
+import os
 import subprocess
 from gerador_audio import gerar_audio_narracao
 from gerador_midia import criar_imagem_fundo
 
 def executar_pipeline():
-    # 1. Lê o roteiro de entrada
     caminho_roteiro = "inputs/roteiro.txt"
     if not os.path.exists(caminho_roteiro):
         raise FileNotFoundError(f"Arquivo de roteiro não encontrado em {caminho_roteiro}")
@@ -14,14 +13,13 @@ def executar_pipeline():
         
     print(f"Roteiro carregado ({len(roteiro)} caracteres).")
     
-    # 2. Gera os assets
+    # Gera os assets usando ferramentas gratuitas
     arquivo_audio = gerar_audio_narracao(roteiro, "temp_audio.mp3")
     
-    # Pega a primeira linha do roteiro como título visual provisório
     titulo_visual = roteiro.split("\n")[0][:30] + "..."
     arquivo_imagem = criar_imagem_fundo(titulo_visual, "temp_bg.png")
     
-    # 3. Monta o vídeo final utilizando FFmpeg
+    # Monta o vídeo final utilizando FFmpeg
     saida_video = "output.mp4"
     comando = [
         "ffmpeg", "-y",
@@ -37,11 +35,10 @@ def executar_pipeline():
         saida_video
     ]
     
-    print("Renderizando vídeo final via FFmpeg...")
+    print("A renderizar vídeo final via FFmpeg...")
     subprocess.run(comando, check=True)
     print(f"Vídeo gerado com sucesso: {saida_video}")
     
-    # Limpeza de arquivos temporários
     for temp in [arquivo_audio, arquivo_imagem]:
         if os.path.exists(temp):
             os.remove(temp)
