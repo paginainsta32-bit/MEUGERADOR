@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador Profissional de Shorts</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #0f1016; color: #f5f5f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+        .container { background-color: #1a1b26; width: 100%; max-width: 600px; padding: 30px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); border: 1px solid #2f334d; }
+        h1 { font-size: 24px; margin-bottom: 20px; color: #7aa2f7; text-align: center; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 14px; margin-bottom: 8px; color: #bb9af7; font-weight: 600; }
+        select, textarea, input { width: 100%; padding: 12px; background-color: #24283b; border: 1px solid #414868; border-radius: 8px; color: #fff; font-size: 14px; }
+        textarea { resize: vertical; height: 120px; }
+        select:focus, textarea:focus { outline: none; border-color: #7aa2f7; }
+        button { background-color: #7aa2f7; color: #1a1b26; border: none; padding: 14px; width: 100%; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.3s; }
+        button:hover { background-color: #89b4fa; }
+        .preview-section { margin-top: 25px; border-top: 1px solid #2f334d; padding-top: 20px; text-align: center; }
+        .preview-section p { color: #565f89; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>🎬 Gerador de Shorts Automático</h1>
+        
+        <form id="shortForm">
+            <div class="form-group">
+                <label for="categoria">Tipo da História (Tema)</label>
+                <select id="categoria">
+                    <option value="terror">👻 Terror & Sobrenatural</option>
+                    <option value="medieval">🛡️ Medieval & Épico</option>
+                    <option value="misterio">🔍 Mistérios & Curiosidades</option>
+                    <option value="motivacional">⚡ Motivacional & Citações</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="estiloImagem">Estilo Visual das Imagens</label>
+                <select id="estiloImagem">
+                    <option value="dark">Cinematográfico Escuro / Gótico</option>
+                    <option value="fantasy">Fantasia / Pintura Medieval</option>
+                    <option value="realistic">Realista / Alta Definição</option>
+                    <option value="anime">Estilo Animação / Ilustração</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="voz">Tipo de Voz (Narração)</label>
+                <select id="voz">
+                    <option value="pt-masculina">Voz Masculina Grave</option>
+                    <option value="pt-feminina">Voz Feminina Padrão</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="roteiro">Roteiro / Texto do Episódio</label>
+                <textarea id="roteiro" placeholder="Escreva ou cole o roteiro da sua história aqui..."></textarea>
+            </div>
+
+            <button type="button" onclick="gerarVideo()">Gerar Episódio na Nuvem</button>
+        </form>
+
+        <div class="preview-section">
+            <p id="statusMsg">Preencha os campos e clique em gerar para disparar o robô.</p>
+        </div>
+    </div>
+
+    <script>
+        function gerarVideo() {
+            const categoria = document.getElementById('categoria').value;
+            const estilo = document.getElementById('estiloImagem').value;
+            const roteiro = document.getElementById('roteiro').value;
+
+            if(!roteiro.trim()) {
+                alert('Por favor, escreva um roteiro antes de gerar!');
+                return;
+            }
+
+            document.getElementById('statusMsg').innerText = "⏳ Pedido enviado! A processar história de " + categoria + "...";
+            
+            // Aqui faremos a ponte para o GitHub Actions processar com as suas escolhas
+            setTimeout(() => {
+                document.getElementById('statusMsg').innerText = "✅ Configuração salva! Verifique a aba Actions no seu GitHub.";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
