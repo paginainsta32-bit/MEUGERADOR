@@ -1,49 +1,59 @@
 import os
+import random
 import requests
 from PIL import Image, ImageDraw, ImageFont
 
 def criar_imagem_fundo(categoria="terror", titulo_episodio="Episódio 01", arquivo_saida="output_bg.png"):
-    print(f"A gerar imagens contextuais para o tema: {categoria}...")
+    print(f"A obter imagem de fundo fiável para o tema: {categoria}...")
     
-    # Mapeia palavras-chave visuais baseadas na categoria escolhida no painel
-    termos_visuais = {
-        "terror": "dark forest, spooky, mysterious, night, horror",
-        "medieval": "medieval castle, knight, epic, vintage, old stones",
-        "misterio": "fog, detective, dark room, secret, shadow",
-        "motivacional": "sunset, mountains, success, inspiration, horizon"
+    # Bancos de imagens verticais garantidos e gratuitos por categoria (Picsum com IDs específicos temáticos/escuros)
+    imagens_por_categoria = {
+        "terror": [
+            "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1080&q=80", # Floresta escura
+            "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1080&q=80"  # Noite sombria
+        ],
+        "medieval": [
+            "https://images.unsplash.com/photo-1599839575943-a7e366bc503a?auto=format&fit=crop&w=1080&q=80", # Castelo / Épico
+            "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1080&q=80"  # Atmosfera antiga
+        ],
+        "misterio": [
+            "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=1080&q=80", # Nevoeiro / Sombra
+            "https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=1080&q=80"  # Noite misteriosa
+        ],
+        "motivacional": [
+            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80", # Paisagem / Horizonte
+            "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1080&q=80"  # Natureza ampla
+        ]
     }
     
-    # Seleciona o termo de busca ou usa um padrão genérico escuro
-    termo = termos_visuais.get(categoria, "dark cinematic background")
+    # Seleciona uma lista de links com base na categoria ou usa uma predefinição
+    lista_links = imagens_por_categoria.get(categoria, imagens_por_categoria["terror"])
+    url_escolhida = random.choice(lista_links)
     
-    # URL de imagens dinâmicas baseadas em termos (usando Unsplash Source de forma gratuita)
-    url = f"https://source.unsplash.com/1080x1920/?{termo.replace(' ', ',')}"
-    
+    sucesso = False
     try:
-        # Tenta obter uma imagem contextualizada da web
-        response = requests.get(url, timeout=15)
-        if response.status_code == 200 and len(response.content) > 1000:
+        response = requests.get(url_escolhida, timeout=15)
+        if response.status_code == 200:
             with open(arquivo_saida, 'wb') as f:
                 f.write(response.content)
             
-            # Aplica uma camada escura semi-transparente para destacar o texto sobre a imagem
+            # Aplica uma camada escura semi-transparente por cima para destacar o texto
             img = Image.open(arquivo_saida).convert("RGBA")
-            overlay = Image.new("RGBA", img.size, (0, 0, 0, 150)) # Escurece para legibilidade
+            overlay = Image.new("RGBA", img.size, (0, 0, 0, 140)) # Camada de contraste
             img_combinada = Image.alpha_composite(img, overlay).convert("RGB")
             img_combinada.save(arquivo_saida)
-            
-            print(f"Imagem temática aplicada com sucesso para '{categoria}': {arquivo_saida}")
-            return arquivo_saida
+            sucesso = True
+            print(f"Imagem de fundo aplicada com sucesso!")
     except Exception as e:
-        print(f"Aviso ao buscar imagem temática: {e}. A usar fundo de segurança.")
+        print(f"Erro ao descarregar imagem: {e}")
         
-    # Fallback visual caso a rede falhe: cria um fundo escuro elegante
-    largura, altura = 1080, 1920
-    imagem = Image.new("RGB", (largura, altura), color=(15, 15, 25))
-    draw = ImageDraw.Draw(imagem)
-    draw.rectangle([50, 800, 1030, 1120], fill=(30, 30, 45), outline=(100, 100, 200), width=4)
-    imagem.save(arquivo_saida)
+    if not sucesso:
+        # Fundo texturizado alternativo de segurança caso haja falha de rede
+        largura, altura = 1080, 1920
+        imagem = Image.new("RGB", (largura, altura), color=(25, 25, 35))
+        imagem.save(arquivo_saida)
+        
     return arquivo_saida
 
 if __name__ == "__main__":
-    criar_imagem_fundo("terror", "Teste de Categoria")
+    criar_imagem_fundo("terror", "Teste")
