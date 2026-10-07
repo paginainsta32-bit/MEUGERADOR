@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       categoria:
-        description: 'Categoria da Historia (terror, medieval, misterio, motivacional)'
+        description: 'Categoria da Historia'
         required: true
         default: 'terror'
       roteiro_texto:
-        description: 'Texto do Roteiro do Episodio'
+        description: 'Texto do Roteiro'
         required: true
-        default: 'Escreva aqui o seu roteiro...'
+        default: 'Texto inicial...'
 
 jobs:
   build:
@@ -24,7 +24,7 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instalar FFmpeg e Dependencias
+      - name: Instalar Dependencias
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install -r requirements.txt
@@ -37,6 +37,7 @@ jobs:
       - name: Executar Gerador de Videos
         env:
           CATEGORIA: ${{ github.event.inputs.categoria }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python src/montador.py
 
@@ -45,10 +46,3 @@ jobs:
         with:
           name: video-pronto
           path: output.mp4
-
-          - name: Executar Gerador de Videos
-        env:
-          CATEGORIA: ${{ github.event.inputs.categoria }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python src/montador.py
