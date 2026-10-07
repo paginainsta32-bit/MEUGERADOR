@@ -3,16 +3,20 @@ name: Gerar Video Short
 on:
   workflow_dispatch:
     inputs:
-      nome_roteiro:
-        description: 'Nome do arquivo de roteiro'
+      categoria:
+        description: 'Categoria da Historia (terror, medieval, misterio, motivacional)'
         required: true
-        default: 'roteiro.txt'
+        default: 'terror'
+      roteiro_texto:
+        description: 'Texto do Roteiro do Episodio'
+        required: true
+        default: 'Escreva aqui o seu roteiro...'
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Copiar Repositório
+      - name: Copiar Repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Python
@@ -20,16 +24,23 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Instalar FFmpeg e Dependências
+      - name: Instalar FFmpeg e Dependencias
         run: |
           sudo apt-get update && sudo apt-get install -y ffmpeg
           pip install -r requirements.txt
 
-      - name: Executar Gerador de Vídeos
+      - name: Salvar Roteiro Dinamico
+        run: |
+          mkdir -p inputs
+          echo "${{ github.event.inputs.roteiro_texto }}" > inputs/roteiro.txt
+
+      - name: Executar Gerador de Videos
+        env:
+          CATEGORIA: ${{ github.event.inputs.categoria }}
         run: |
           python src/montador.py
 
-      - name: Salvar Vídeo Gerado (Artifacts)
+      - name: Salvar Video Gerado (Artifacts)
         uses: actions/upload-artifact@v4
         with:
           name: video-pronto
