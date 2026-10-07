@@ -1,59 +1,65 @@
 import os
-import random
-import requests
-from PIL import Image, ImageDraw, ImageFont
+from google import genai
+from PIL import Image, ImageDraw
 
-def criar_imagem_fundo(categoria="terror", titulo_episodio="Episódio 01", arquivo_saida="output_bg.png"):
-    print(f"A obter imagem de fundo fiável para o tema: {categoria}...")
+def criar_imagem_fundo(categoria="terror", texto_roteiro="historia misteriosa", arquivo_saida="output_bg.png"):
+    print("A aceder à IA oficial do Google para criar uma imagem exclusiva para o seu Short...")
     
-    # Bancos de imagens verticais garantidos e gratuitos por categoria (Picsum com IDs específicos temáticos/escuros)
-    imagens_por_categoria = {
-        "terror": [
-            "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1080&q=80", # Floresta escura
-            "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=1080&q=80"  # Noite sombria
-        ],
-        "medieval": [
-            "https://images.unsplash.com/photo-1599839575943-a7e366bc503a?auto=format&fit=crop&w=1080&q=80", # Castelo / Épico
-            "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1080&q=80"  # Atmosfera antiga
-        ],
-        "misterio": [
-            "https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=1080&q=80", # Nevoeiro / Sombra
-            "https://images.unsplash.com/photo-1514539079130-25950c84af65?auto=format&fit=crop&w=1080&q=80"  # Noite misteriosa
-        ],
-        "motivacional": [
-            "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1080&q=80", # Paisagem / Horizonte
-            "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1080&q=80"  # Natureza ampla
-        ]
-    }
-    
-    # Seleciona uma lista de links com base na categoria ou usa uma predefinição
-    lista_links = imagens_por_categoria.get(categoria, imagens_por_categoria["terror"])
-    url_escolhida = random.choice(lista_links)
+    # Inicializa o cliente da API do Google utilizando a chave secreta guardada no GitHub
+    api_key = os.environ.get("GEMINI_API_KEY")
     
     sucesso = False
-    try:
-        response = requests.get(url_escolhida, timeout=15)
-        if response.status_code == 200:
-            with open(arquivo_saida, 'wb') as f:
-                f.write(response.content)
+    if api_key:
+        try:
+            client = genai.Client(api_key=api_key)
             
-            # Aplica uma camada escura semi-transparente por cima para destacar o texto
-            img = Image.open(arquivo_saida).convert("RGBA")
-            overlay = Image.new("RGBA", img.size, (0, 0, 0, 140)) # Camada de contraste
-            img_combinada = Image.alpha_composite(img, overlay).convert("RGB")
-            img_combinada.save(arquivo_saida)
-            sucesso = True
-            print(f"Imagem de fundo aplicada com sucesso!")
-    except Exception as e:
-        print(f"Erro ao descarregar imagem: {e}")
-        
+            # Define estilos visuais baseados na escolha do painel
+            estilos = {
+                "terror": "dark horror cinematic style, spooky atmosphere, high contrast, highly detailed",
+                "medieval": "epic medieval fantasy painting, ancient castle, dramatic lighting, detailed artwork",
+                "misterio": "dark mystery, foggy night, cinematic shadows, thriller atmosphere",
+                "motivacional": "majestic cinematic landscape, epic sunset, inspiring horizon, 8k resolution"
+            }
+            estilo_escolhido = estilos.get(categoria, "cinematic dark fantasy")
+            
+            prompt_final = f"{texto_roteiro[:150]} , {estilo_escolhido}, vertical 9:16 format"
+            
+            print(prompt_final)
+            
+            # Utiliza o modelo de geração de imagens do Google (Imagen)
+            result = client.models.generate_images(
+                model='imagen-3.0-generate-002',
+                prompt=prompt_final,
+                config=dict(
+                    number_of_images=1,
+                    output_mime_type="image/jpeg",
+                    aspect_ratio="9:16",
+                ),
+            )
+            
+            for generated_image in result.generated_images:
+                image = Image.open(io.BytesIO(generated_image.image.image_bytes))
+                
+                # Aplica uma camada escura por cima para garantir que o texto do vídeo sobressai perfeitamente
+                overlay = Image.new("RGBA", image.size, (0, 0, 0, 130))
+                image_rgba = image.convert("RGBA")
+                img_combinada = Image.alpha_composite(image_rgba, overlay).convert("RGB")
+                img_combinada.save(arquivo_saida)
+                
+                sucesso = True
+                print("Imagem exclusiva gerada com sucesso pelo Google Imagen!")
+                break
+                
+        except Exception as e:
+            print(f"Aviso ao gerar imagem com a API do Google: {e}. A usar plano de segurança visual.")
+
     if not sucesso:
-        # Fundo texturizado alternativo de segurança caso haja falha de rede
+        # Fundo elegante de segurança caso ocorra algum imprevisto
         largura, altura = 1080, 1920
-        imagem = Image.new("RGB", (largura, altura), color=(25, 25, 35))
+        imagem = Image.new("RGB", (largura, altura), color=(15, 15, 25))
         imagem.save(arquivo_saida)
         
     return arquivo_saida
 
 if __name__ == "__main__":
-    criar_imagem_fundo("terror", "Teste")
+    criar_imagem_fundo("terror", "um segredo escondido na floresta")
