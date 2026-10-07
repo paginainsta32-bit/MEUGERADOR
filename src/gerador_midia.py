@@ -1,48 +1,61 @@
-name: Gerar Video Short
+import os
+import io
+from google import genai
+from PIL import Image
 
-on:
-  workflow_dispatch:
-    inputs:
-      categoria:
-        description: 'Categoria da Historia'
-        required: true
-        default: 'terror'
-      roteiro_texto:
-        description: 'Texto do Roteiro'
-        required: true
-        default: 'Texto inicial...'
+def criar_imagem_fundo(categoria="terror", texto_roteiro="historia misteriosa", arquivo_saida="output_bg.png"):
+    print("A aceder à IA oficial do Google para criar uma imagem exclusiva para o seu Short...")
+    
+    api_key = os.environ.get("GEMINI_API_KEY")
+    sucesso = False
+    
+    if api_key:
+        try:
+            client = genai.Client(api_key=api_key)
+            
+            estilos = {
+                "terror": "dark horror cinematic style, spooky atmosphere, high contrast, highly detailed",
+                "medieval": "epic medieval fantasy painting, ancient castle, dramatic lighting, detailed artwork",
+                "misterio": "dark mystery, foggy night, cinematic shadows, thriller atmosphere",
+                "motivacional": "majestic cinematic landscape, epic sunset, inspiring horizon, 8k resolution"
+            }
+            estilo_escolhido = estilos.get(categoria, "cinematic dark fantasy")
+            
+            prompt_final = f"{texto_roteiro[:150]} , {estilo_escolhido}, vertical 9:16 format"
+            print(f"Prompt para o Google Imagen: {prompt_final}")
+            
+            result = client.models.generate_images(
+                model='imagen-3.0-generate-002',
+                prompt=prompt_final,
+                config=dict(
+                    number_of_images=1,
+                    output_mime_type="image/jpeg",
+                    aspect_ratio="9:16",
+                ),
+            )
+            
+            for generated_image in result.generated_images:
+                image = Image.open(io.BytesIO(generated_image.image.image_bytes))
+                
+                overlay = Image.new("RGBA", image.size, (0, 0, 0, 130))
+                image_rgba = image.convert("RGBA")
+                img_combinada = Image.alpha_composite(image_rgba, overlay).convert("RGB")
+                img_combinada.save(arquivo_saida)
+                
+                sucesso = True
+                print("Imagem exclusiva gerada com sucesso pelo Google Imagen!")
+                break
+                
+        except Exception as e:
+            print(f"Erro ao gerar imagem com a API do Google: {e}")
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Copiar Repositorio
-        uses: actions/checkout@v4
+    if not sucesso:
+        print("A utilizar imagem de segurança...")
+        largura, altura = 1080, 1920
+        imagem = Image.new("RGB", (largura, altura), color=(15, 15, 25))
+        imagem.save(arquivo_saida)
+        
+    return arquivo_saida
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Instalar Dependencias
-        run: |
-          sudo apt-get update && sudo apt-get install -y ffmpeg
-          pip install -r requirements.txt
-
-      - name: Salvar Roteiro Dinamico
-        run: |
-          mkdir -p inputs
-          echo "${{ github.event.inputs.roteiro_texto }}" > inputs/roteiro.txt
-
-      - name: Executar Gerador de Videos
-        env:
-          CATEGORIA: ${{ github.event.inputs.categoria }}
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python src/montador.py
-
-      - name: Salvar Video Gerado (Artifacts)
-        uses: upload-artifact@v4
-        with:
-          name: video-pronto
-          path: output.mp4
+if __name__ == "__main__":
+    criar_imagem_fundo("terror", "um segredo escondido na floresta")
