@@ -1,56 +1,45 @@
 import os
-import io
-from google import genai
+import requests
 from PIL import Image
+from urllib.parse import quote
 
 def criar_imagem_fundo(categoria="terror", texto_roteiro="historia misteriosa", arquivo_saida="output_bg.png"):
-    print("A aceder à IA oficial do Google para criar uma imagem exclusiva para o seu Short...")
+    print(f"A gerar imagem por IA para o tema '{categoria}'...")
     
-    api_key = os.environ.get("GEMINI_API_KEY")
+    # Define estilos visuais profissionais com base na categoria
+    estilos = {
+        "terror": "dark horror cinematic style, spooky atmosphere, high contrast, highly detailed digital art",
+        "medieval": "epic medieval fantasy painting, ancient castle, dramatic lighting, detailed digital artwork",
+        "misterio": "dark mystery, foggy night, cinematic shadows, thriller atmosphere",
+        "motivacional": "majestic cinematic landscape, epic sunset, inspiring horizon, 8k resolution"
+    }
+    
+    estilo_escolhido = estilos.get(categoria, "cinematic dark fantasy")
+    resumo = texto_roteiro[:120].replace("\n", " ")
+    prompt_final = f"{resumo}, {estilo_escolhido}, vertical format 9:16"
+    
+    prompt_url = quote(prompt_final)
+    url_ia = f"https://image.pollinations.ai/prompt/{prompt_url}?width=1080&height=1920&nologo=true&seed=123"
+    
     sucesso = False
-    
-    if api_key:
-        try:
-            client = genai.Client(api_key=api_key)
+    try:
+        response = requests.get(url_ia, timeout=40)
+        if response.status_code == 200 and len(response.content) > 3000:
+            with open(arquivo_saida, 'wb') as f:
+                f.write(response.content)
             
-            estilos = {
-                "terror": "dark horror cinematic style, spooky atmosphere, high contrast, highly detailed",
-                "medieval": "epic medieval fantasy painting, ancient castle, dramatic lighting, detailed artwork",
-                "misterio": "dark mystery, foggy night, cinematic shadows, thriller atmosphere",
-                "motivacional": "majestic cinematic landscape, epic sunset, inspiring horizon, 8k resolution"
-            }
-            estilo_escolhido = estilos.get(categoria, "cinematic dark fantasy")
-            
-            prompt_final = f"{texto_roteiro[:150]} , {estilo_escolhido}, vertical 9:16 format"
-            print(f"Prompt para o Google Imagen: {prompt_final}")
-            
-            result = client.models.generate_images(
-                model='imagen-3.0-generate-002',
-                prompt=prompt_final,
-                config=dict(
-                    number_of_images=1,
-                    output_mime_type="image/jpeg",
-                    aspect_ratio="9:16",
-                ),
-            )
-            
-            for generated_image in result.generated_images:
-                image = Image.open(io.BytesIO(generated_image.image.image_bytes))
-                
-                overlay = Image.new("RGBA", image.size, (0, 0, 0, 130))
-                image_rgba = image.convert("RGBA")
-                img_combinada = Image.alpha_composite(image_rgba, overlay).convert("RGB")
-                img_combinada.save(arquivo_saida)
-                
-                sucesso = True
-                print("Imagem exclusiva gerada com sucesso pelo Google Imagen!")
-                break
-                
-        except Exception as e:
-            print(f"Erro ao gerar imagem com a API do Google: {e}")
+            # Aplica uma camada escura por cima para o texto do Short sobressair perfeitamente
+            img = Image.open(arquivo_saida).convert("RGBA")
+            overlay = Image.new("RGBA", img.size, (0, 0, 0, 140))
+            img_combinada = Image.alpha_composite(img, overlay).convert("RGB")
+            img_combinada.save(arquivo_saida)
+            sucesso = True
+            print("Imagem exclusiva gerada com sucesso e aplicada ao vídeo!")
+    except Exception as e:
+        print(f"Erro ao obter imagem da IA: {e}")
 
     if not sucesso:
-        print("A utilizar imagem de segurança...")
+        print("A utilizar fundo alternativo de segurança...")
         largura, altura = 1080, 1920
         imagem = Image.new("RGB", (largura, altura), color=(15, 15, 25))
         imagem.save(arquivo_saida)
