@@ -1,28 +1,34 @@
 import os
+import requests
 from PIL import Image, ImageDraw, ImageFont
 
 def criar_imagem_fundo(titulo_episodio="Episódio 01", arquivo_saida="output_bg.png"):
-    # Cria uma imagem vertical padrão (1080x1920) com fundo escuro e título centralizado
-    largura, altura = 1080, 1920
-    cor_fundo = (15, 15, 25) # Tom escuro moderno
+    print("A descarregar imagem de fundo vertical aleatória...")
     
-    imagem = Image.new("RGB", (largura, altura), color=cor_fundo)
-    draw = ImageDraw.Draw(imagem)
+    # URL de imagens verticais de alta qualidade 100% gratuita (Picsum Photos)
+    url = "https://picsum.photos/1080/1920"
     
-    # Tenta carregar uma fonte padrão do Linux, senão usa a padrão do sistema
     try:
-        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 60)
-    except:
-        font = ImageFont.load_default()
+        response = requests.get(url, timeout=15)
+        if response.status_code == 200:
+            with open(arquivo_saida, 'wb') as f:
+                f.write(response.content)
+            
+            # Aplica uma camada escura semi-transparente por cima para destacar o texto do vídeo
+            img = Image.open(arquivo_saida).convert("RGBA")
+            overlay = Image.new("RGBA", img.size, (0, 0, 0, 140)) # Escurece o fundo
+            img_combinada = Image.alpha_composite(img, overlay).convert("RGB")
+            img_combinada.save(arquivo_saida)
+            
+            print(f"Imagem de fundo aplicada com sucesso: {arquivo_saida}")
+            return arquivo_saida
+    except Exception as e:
+        print(f"Aviso ao obter imagem da web: {e}. A usar fundo de segurança.")
         
-    texto = titulo_episodio
-    
-    # Desenha o fundo visual básico para o Short (Corrigido para parênteses corretos)
-    draw.rectangle([50, 800, 1030, 1120], fill=(30, 30, 45), outline=(100, 100, 200), width=4)
-    draw.text((100, 930), texto, fill=(255, 255, 255), font=font)
-    
+    # Fallback caso ocorra algum problema de rede: cria um fundo escuro elegante
+    largura, altura = 1080, 1920
+    imagem = Image.new("RGB", (largura, altura), color=(15, 15, 25))
     imagem.save(arquivo_saida)
-    print(f"Imagem de fundo gerada: {arquivo_saida}")
     return arquivo_saida
 
 if __name__ == "__main__":
